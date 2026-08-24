@@ -37,5 +37,14 @@ class SequenceModel:
         counts = self.transitions[activity][context]
         total_occurrences = sum(counts.values())
 
-
+        # calculate probabilites for all next objects
         probabilities = {obj: count / total_occurrences for obj, count in counts.items()}
+
+        # rank all candidates
+        sorted_candidates = sorted(probabilities.items(), key=lambda x: x[1], reverse=True)
+        top_prediction, max_prob = sorted_candidates[0]
+
+        # boolean to determine whether or not to trigger the LLM response for the HIRR model
+        trigger_llm = max_prob < self.threshold
+
+        return top_prediction, max_prob, sorted_candidates, trigger_llm

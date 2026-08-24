@@ -31,7 +31,7 @@ class HIRRBase:
 
     def can_assist_objects(self, action: UserAction) -> bool:
         # check if the human intent/activity is recognized
-        return action.completed is False
+        return action.completed is False # TODO: check what actually determines whether an activity has been completed or not
 
     def evaluate_next_step(self, action: UserAction) -> Optional[str]:
         sequence = self.plans.get(action.activity, action.objects_in_activity) # get the activity, and all the steps it has currently
