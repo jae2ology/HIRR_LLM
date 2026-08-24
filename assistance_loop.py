@@ -1,8 +1,12 @@
-import time
+import os
+from dotenv import load_dotenv
 from openai import OpenAI
 from typing import Optional, List, Dict
 from pydantic import BaseModel
+from markov_model import SequenceModel
 
+load_dotenv()
+open_ai_key = os.getenv("OPEN_AI_API_KEY")
 
 # pydantic classes for user actions and known plan
 class UserAction(BaseModel):
@@ -14,7 +18,6 @@ class Prediction(BaseModel):
     known_sequence: List[str] # like ["fetch_bowl", "fetch_fork", "fetch_cup"]
     curr_index: int = 0 # current step in sequence
 
-
 # logic
 class HIRRBase:
     """this class will handle known routines and predictions"""
@@ -22,17 +25,39 @@ class HIRRBase:
         self.plans = predefined_plans
         # e.g, predefined_plans = "eating" : ["fetch_bowl", "fetch_spoon", "fetch_cereal", "fetch_milk"]
 
-    def can_assist(self, action: UserAction) -> bool:
-        # check if the human intent/activity is recognized and the task is still going
-        return action.activity in self.plans & action.completed is False
+    def can_assist_activity(self, action: UserAction) -> bool:
+        # check if the human intent/activity is recognized
+        return action.activity in self.plans
 
-    def evaluate_next_step(self, action: UserAction, curr_step_index: int) -> Optional[str]:
-        sequence = self.plans.get(action.activity, []) # get the activity, and all the steps needed for it
+    def can_assist_objects(self, action: UserAction) -> bool:
+        # check if the human intent/activity is recognized
+        return action.completed is False
 
-        if curr_step_index < len(sequence):
-            return sequence[curr_step_index + 1] # next step is predictable
+    def evaluate_next_step(self, action: UserAction) -> Optional[str]:
+        sequence = self.plans.get(action.activity, action.objects_in_activity) # get the activity, and all the steps it has currently
 
-        return None # next step is not predictable, must go to LLM system
+        # call the n gram model and train on predefined plans (dataset)
+        model = SequenceModel(threshold=0.5)
+        model.train(self.plans)
+
+        # assume that the recognized activity IS in the dataset
+        current_activity = action.activity
+        current_objects = action.objects_in_activity
+
+        pred_obj, confidence, top_candidates, trigger_llm = model.predict_next(current_activity, current_objects)
+
+        # if trigger LLM is false, then the model has high confidence for the next object being pred_obj
+        if not trigger_llm:
+            print(f"Next object needed in sequence: {pred_obj} with confidence: {confidence}")
+
+        else:
+            print(f"Model has low confidence. Top candidates: {top_candidates}. Triggering LLM response")
+            llm = LLMFallback(api_key=open_ai_key)
+            response = llm.infer_goal_create_task(action=action, predicted_objects=top_candidates)
+            print(f"Model will pick up {response}. Is this correct?")
+
+        #TODO: change return type to string object when testing
+
 class LLMFallback:
     """this class will handle unpredictable intent/actions from a human user"""
     def __init__(self, api_key: str):
@@ -77,7 +102,6 @@ class LLMFallback:
         )
 
         return response.output_text
-
 
 
 # simulated robot
