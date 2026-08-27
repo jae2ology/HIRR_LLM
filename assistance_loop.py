@@ -102,17 +102,3 @@ class LLMFallback:
         )
 
         return response.output_text
-
-
-# simulated robot
-class RobotExecution:
-    """simulates fetching"""
-    def fetch_object(self, object_name: str) -> bool:
-        print(f"Fetching target object -> '{object_name}'")
-        return True
-
-    def sit_and_observe(self):
-        print("Waiting")
-
-    def clarify(self):
-        print("I am currently unsure of what action you are performing. What would you like me to do?")

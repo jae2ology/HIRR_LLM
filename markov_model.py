@@ -1,12 +1,11 @@
-import numpy as np
 from collections import defaultdict, Counter
 
 class SequenceModel:
     """
         N-gram sequence model built from scratch
 
-        This model estimates P(next_word | previous n-1 words)
-        by counting occurrences in the training corpus.
+        P(next_word | previous n-1 words)
+        by counting occurrences in the training dataset
     """
     def __init__(self, n=1, threshold=0.5):
         self.n = n
@@ -21,8 +20,8 @@ class SequenceModel:
         """
         for activity, sequence in dataset:
             for i in range(len(sequence)):
-                context = tuple(sequence[i : i + 1])
-                next_obj = sequence[i + 1]
+                context = tuple(sequence[i - self.n : i])
+                next_obj = sequence[i]
                 self.transitions[activity][context][next_obj] += 1
 
     def predict_next(self, activity, objects):
