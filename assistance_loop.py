@@ -1,9 +1,18 @@
 import os
+from operator import truediv
 from dotenv import load_dotenv
 from openai import OpenAI
 from typing import Optional, List, Dict
 from pydantic import BaseModel
 from markov_model import SequenceModel
+from activity_recognition import ActivityRecognizer
+import ultralytics
+import supervision
+import torch
+import cv2
+from collections import defaultdict
+import supervision as scv
+from ultralytics import YOLO
 
 load_dotenv()
 open_ai_key = os.getenv("OPEN_AI_API_KEY")
@@ -13,11 +22,9 @@ class UserAction(BaseModel):
     activity: str # like, "cooking", "eating", "reading", etc
     objects_in_activity: List[str] # like ["bowl", "fork"]
     completed: bool = False # to determine if the action can be assisted with or not
-
 class Prediction(BaseModel):
     known_sequence: List[str] # like ["fetch_bowl", "fetch_fork", "fetch_cup"]
     curr_index: int = 0 # current step in sequence
-
 # logic
 class HIRRBase:
     """this class will handle known routines and predictions"""
@@ -31,7 +38,7 @@ class HIRRBase:
 
     def can_assist_objects(self, action: UserAction) -> bool:
         # check if the human intent/activity is recognized
-        return action.completed is False # TODO: check what actually determines whether an activity has been completed or not
+        return action.completed is False
 
     def evaluate_next_step(self, action: UserAction) -> Optional[str]:
         sequence = self.plans.get(action.activity, action.objects_in_activity) # get the activity, and all the steps it has currently
@@ -54,10 +61,7 @@ class HIRRBase:
             print(f"Model has low confidence. Top candidates: {top_candidates}. Triggering LLM response")
             llm = LLMFallback(api_key=open_ai_key)
             response = llm.infer_goal_create_task(action=action, predicted_objects=top_candidates)
-            print(f"Model will pick up {response}. Is this correct?")
-
-        #TODO: change return type to string object when testing
-
+            print(f"Model will pick up {response}.")
 class LLMFallback:
     """this class will handle unpredictable intent/actions from a human user"""
     def __init__(self, api_key: str):
@@ -102,3 +106,5 @@ class LLMFallback:
         )
 
         return response.output_text
+
+model = YOLO('yolov8n.pt')
