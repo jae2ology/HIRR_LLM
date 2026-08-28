@@ -156,8 +156,6 @@ def merge_json_files(file_list, output_filename):
     return merged_data
 
 
-# --- File Paths ---
-# Adjust filenames/paths to match your generated household JSON outputs
 train_files = [
     'homer_train_tuples_A.json',
     'homer_train_tuples_B.json',
@@ -170,17 +168,9 @@ test_files = [
     'homer_test_tuples_C.json'
 ]
 
-# --- 1. Merge all Train files ---
-print("--- Merging Training Datasets ---")
 merged_train = merge_json_files(train_files, 'homer_train_all.json')
-
-# --- 2. Merge all Test files ---
-print("--- Merging Test Datasets ---")
 merged_test = merge_json_files(test_files, 'homer_test_all.json')
 
-# --- 3. (Optional) Merge EVERYTHING into a single Dataset file ---
-print("--- Merging Complete Dataset ---")
 complete_dataset = merged_train + merged_test
 with open('homer_dataset_complete.json', 'w', encoding='utf-8') as f:
     json.dump(complete_dataset, f, indent=4)
-print(f"Saved complete dataset ({len(complete_dataset)} total tuples) -> homer_dataset_complete.json")
