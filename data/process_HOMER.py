@@ -168,9 +168,5 @@ test_files = [
     'homer_test_tuples_C.json'
 ]
 
-merged_train = merge_json_files(train_files, 'homer_train_all.json')
-merged_test = merge_json_files(test_files, 'homer_test_all.json')
-
-complete_dataset = merged_train + merged_test
-with open('homer_dataset_complete.json', 'w', encoding='utf-8') as f:
-    json.dump(complete_dataset, f, indent=4)
+merged_train = merge_json_files(train_files, 'merged_json/train/homer_train_all.json')
+merged_test = merge_json_files(test_files, 'merged_json/test/homer_test_all.json')
