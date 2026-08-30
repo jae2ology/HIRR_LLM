@@ -168,5 +168,5 @@ test_files = [
     'homer_test_tuples_C.json'
 ]
 
-merged_train = merge_json_files(train_files, 'merged_json/train/homer_train_all.json')
-merged_test = merge_json_files(test_files, 'merged_json/test/homer_test_all.json')
+merged_train = merge_json_files(train_files, 'merged_json/train/X_train_raw.json')
+merged_test = merge_json_files(test_files, 'merged_json/test/X_test_raw.json')
