@@ -1,4 +1,5 @@
 import json
+import pandas as pd
 
 
 def process_sequence(seq):
@@ -46,5 +47,23 @@ def process_train_dataset(input_path, output_path):
         json.dump(cleaned_data, f, indent=4)
 
 
-# Usage example:
-process_train_dataset("data/merged_json/train/X_train_raw.json", "X_train.json")
+def load_activity_data(file_path):
+    """extracts object features to predict the activity"""
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    X_rows, y_labels = [], []
+
+    for item in data:
+        seq = list(dict.fromkeys(item["sequence"]))
+        if seq and seq[-1] == "END":
+            seq = seq[:-1]
+
+        # use recent objects as features for Naive Bayes
+        last_obj = seq[-1] if len(seq) >= 1 else "<NONE>"
+        prev_obj = seq[-2] if len(seq) >= 2 else "<NONE>"
+
+        X_rows.append({"prev_object": prev_obj, "last_object": last_obj})
+        y_labels.append(item["activity"])
+
+    return pd.DataFrame(X_rows), pd.Series(y_labels)

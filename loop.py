@@ -3,23 +3,22 @@ import json
 import numpy as np
 import time
 
-from perception_module import PerceptionModule
-from activity_recognition import ActivityRecognizer
-from baseline_HIRR import HIRRBase, UserAction
+from nltk import accuracy
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import OrdinalEncoder
 
-dataset_path = 'data/merged_json/homer_dataset_complete.json'
-X_train_path = 'data/merged_json/train/X_train_raw.json'
-X_test_path = 'data/merged_json/test/X_test_raw.json'
+from models.perception_module import PerceptionModule
+from models.activity_recognition import ActivityRecognizer
+from models.baseline_HIRR import HIRRBase, UserAction
+from data.merged_json.process_train_test import load_activity_data
+from models.markov_model import SequenceModel
 
-X = []
-y = []
-dataset = []
 
-perception_module = PerceptionModule(False)
-activity_model = ActivityRecognizer(X, y)
-HIRR_base = HIRRBase(dataset)
 
 # main loop
+perception_module = PerceptionModule(False)
+HIRR_base = HIRRBase(train_path)
+
 while True:
     current_objs = []
 

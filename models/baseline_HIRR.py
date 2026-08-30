@@ -4,6 +4,7 @@ from openai import OpenAI
 from typing import Optional, List, Dict
 from pydantic import BaseModel
 from markov_model import SequenceModel
+import json
 
 load_dotenv()
 open_ai_key = os.getenv("OPEN_AI_API_KEY")
@@ -18,8 +19,11 @@ class UserAction(BaseModel):
 # logic
 class HIRRBase:
     """this class will handle known routines and predictions"""
-    def __init__(self, predefined_plans: Dict[str, List[str]]):
-        self.plans = predefined_plans
+    def __init__(self, path_to_train:str):
+        with open(path_to_train, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        self.plans = data
         # e.g, predefined_plans = "eating" : ["fetch_bowl", "fetch_spoon", "fetch_cereal", "fetch_milk"]
 
     def can_assist_activity(self, action: UserAction) -> bool:
@@ -31,8 +35,6 @@ class HIRRBase:
         return action.completed is False
 
     def evaluate_next_step(self, action: UserAction) -> Optional[str]:
-        sequence = self.plans.get(action.activity, action.objects_in_activity) # get the activity, and all the steps it has currently
-
         # call the n gram model and train on predefined plans (dataset)
         model = SequenceModel(threshold=0.5)
         model.train(self.plans)
