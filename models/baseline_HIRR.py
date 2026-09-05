@@ -1,9 +1,11 @@
 import os
+
+import cohere
 from dotenv import load_dotenv
 from openai import OpenAI
 from typing import Optional, List, Dict
 from pydantic import BaseModel
-from markov_model import SequenceModel
+from models.markov_model import SequenceModel
 import json
 
 load_dotenv()
@@ -20,6 +22,8 @@ class UserAction(BaseModel):
 class HIRRBase:
     """this class will handle known routines and predictions"""
     def __init__(self, path_to_train:str):
+        self.path_to_train = path_to_train
+
         with open(path_to_train, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
@@ -37,7 +41,7 @@ class HIRRBase:
     def evaluate_next_step(self, action: UserAction) -> Optional[str]:
         # call the n gram model and train on predefined plans (dataset)
         model = SequenceModel(threshold=0.5)
-        model.train(self.plans)
+        model.train(self.path_to_train)
 
         # assume that the recognized activity IS in the dataset
         current_activity = action.activity
@@ -53,6 +57,7 @@ class HIRRBase:
             print(f"Model has low confidence. Top candidates: {top_candidates}. Triggering LLM response")
             llm = LLMFallback(api_key=open_ai_key)
             response = llm.infer_goal_create_task(action=action, predicted_objects=top_candidates)
+            response = str(response).lower().strip()
             print(f"Model will pick up {response}.")
             pred_obj = response
 
@@ -60,46 +65,42 @@ class HIRRBase:
 
 
 class LLMFallback:
-    """this class will handle unpredictable intent/actions from a human user"""
+    """handles unpredictable intent/actions from a user using OpenAI SDK"""
     def __init__(self, api_key: str):
-        self.client = OpenAI()
+        self.client = cohere.ClientV2(api_key=api_key)
 
-    def infer_goal_create_task(self, action: UserAction, predicted_objects) -> str:
-        prompt = """
-        You are the brain of an assistance robot. 
-        The human user is currently doing this activity: {activity}.
-        The user has picked up these objects in order: {objects} 
-        The n-gram sequence model has predicted these potential objects: {predicted}
-        
-        Choosing only from the predicted object list, what object is needed next?
-        Do not explain your answer, simply give the response.
+    def infer_goal_create_task(self, action: UserAction, predicted_objects: list) -> str:
+        # Extract candidate names if predicted_objects contains (object, probability) tuples
+        candidate_names = [
+            obj[0] if isinstance(obj, (tuple, list)) else obj
+            for obj in predicted_objects
+        ]
+
+        objects_str = ", ".join(action.objects_in_activity) if action.objects_in_activity else "None"
+        candidates_str = ", ".join(candidate_names) if candidate_names else "None"
+
+        prompt = f"""You are the brain of an assistance robot.
+        The human user is currently doing this activity: {action.activity}.
+        The user has picked up these objects in order: {objects_str}
+        The n-gram sequence model has predicted these potential candidate objects: {candidates_str}
+
+        Choosing ONLY from the predicted object list, what object is needed next?
+        Do not explain your answer. Do not give an explanation. Do not walk through your answer. Only give the answer.
         """
 
-        response = self.client.responses.create(
-            model="gpt-5.6",
-            input= [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "input_text",
-                            "text": prompt
-                        },
-                        {
-                            "type": "input_text",
-                            "text": action.activity
-                        },
-                        {
-                            "type": "input_text",
-                            "text": action.objects_in_activity
-                        },
-                        {
-                            "type": "input_text",
-                            "text": predicted_objects
-                        },
-                    ],
-                }
-            ]
+        response = self.client.chat(
+            model="command-a-plus-05-2026",
+            messages=[
+                {"role": "user",
+                 "content": prompt}
+            ],
         )
 
-        return response.output_text
+        for content_item in response.message.content:
+            if content_item.type == "text":
+                final_res = content_item
+
+        if final_res and hasattr(final_res, 'text'):
+            return final_res.text.strip().lower()
+
+        return ""
