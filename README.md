@@ -20,9 +20,6 @@ visual perception (YOLOv8) with activity prediction using a Naïve
 Bayes model and an activity-conditioned 𝑛-gram sequence model
 (Markov model) to predict the next object required in a task. When
 prediction confidence drops below a threshold of 0.5, an adaptive
-Large Language Model (LLM) fallback module is queried for se-
-mantic reasoning. SMART-PRO performance without the LLM
+Large Language Model (LLM) fallback module is queried for semantic reasoning. SMART-PRO performance without the LLM
 queries raises the F1-score metric to 0.82, and 0.77 with queries,
-over a score of 0.73 from previous work. SMART-PRO is fur-
-ther validated through tasks within the NVIDIA Isaac Sim en-
-vironment integrated with ROS 2. 
+over a score of 0.73 from previous work. SMART-PRO is further validated through tasks within the NVIDIA Isaac Sim environment integrated with ROS 2. 
