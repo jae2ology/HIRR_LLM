@@ -14,7 +14,7 @@ from models.markov_model import SequenceModel
 
 
 # CATEGORICAL NAIVE BAYES (F1, Confusion Matrix)
-dataset_path = 'data/merged_json/dataset.json'
+dataset_path = '../data/merged_json/dataset.json'
 X_all_act, y_all_act = load_activity_data(dataset_path) # helper method that gets rid of the 'activity' and only keeps the objects for the model to predict with for X, and has the list of activities for Y
 
 # encode features to turn into numbers
@@ -24,9 +24,9 @@ X_all_act_enc = enc_act.fit_transform(X_all_act)
 # handle unseen categories (-1)
 X_all_act_enc[X_all_act_enc == -1] = X_all_act_enc.max() + 1
 
-# --- F1 Score & Confusion Matrix ---
-X_train_act, y_train_act = load_activity_data('data/merged_json/train/train.json')
-X_test_act, y_test_act = load_activity_data('data/merged_json/test/test.json')
+# F1 SCORE FOR NAIVE BAYES (WEIGHTED AND UNWEIGHTED)
+X_train_act, y_train_act = load_activity_data('../data/merged_json/train/train.json')
+X_test_act, y_test_act = load_activity_data('../data/merged_json/test/test.json')
 
 X_train_enc = enc_act.fit_transform(X_train_act)
 X_test_enc = enc_act.transform(X_test_act)
@@ -40,7 +40,7 @@ nb_f1_weighted = f1_score(y_test_act, nb_preds, average='weighted')
 print(f"Naive Bayes F1-Score:    {nb_f1_macro * 100:.2f}%")
 print(f"Naive Bayes Weighted F1-Score: {nb_f1_weighted * 100:.2f}%")
 
-# Plot Naive Bayes Confusion Matrix
+# CONFUSION MATRIX FOR NAIVE BAYES
 plt.figure(figsize=(8, 6))
 labels = np.unique(y_test_act)
 cm_nb = confusion_matrix(y_test_act, nb_preds, labels=labels)
@@ -52,8 +52,8 @@ plt.tight_layout()
 plt.show()
 
 # 2. MARKOV SEQUENCE MODEL (F1, Confusion Matrix)
-# F1 Score & Confusion Matrix
-with open('data/merged_json/test/test.json', 'r', encoding='utf-8') as f:
+# F1 SCORE FOR MARKOV
+with open('../data/merged_json/test/test.json', 'r', encoding='utf-8') as f:
     test_json_data = json.load(f)
 
 holdout_markov = SequenceModel(n=1, threshold=0.5)
@@ -62,7 +62,7 @@ holdout_markov.train('data/merged_json/train/train.json')
 y_markov_true, y_markov_pred = [], []
 
 for i, item in enumerate(test_json_data):
-    pred_act = nb_preds[i]  # Using predicted activity from Naive Bayes
+    pred_act = nb_preds[i]
     seq = list(dict.fromkeys(item["sequence"]))
     if seq and seq[-1] == "END":
         seq = seq[:-1]
@@ -81,7 +81,7 @@ markov_f1_weighted = f1_score(y_markov_true, y_markov_pred, average='weighted', 
 print(f"Markov Macro F1-Score:    {markov_f1_macro * 100:.2f}%")
 print(f"Markov Weighted F1-Score: {markov_f1_weighted * 100:.2f}%")
 
-# Plot Top-10 Most Common Objects Confusion Matrix for Markov Model
+# CONFSION MATRIX FOR MARKOV
 obj_labels = pd.Series(y_markov_true).value_counts().head(10).index.tolist()
 cm_markov = confusion_matrix(y_markov_true, y_markov_pred, labels=obj_labels)
 

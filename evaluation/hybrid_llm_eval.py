@@ -8,10 +8,9 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from sklearn.metrics import accuracy_score, f1_score
 from models.baseline_HIRR import HIRRBase, UserAction
 
-train_path = 'data/merged_json/train/train.json'
-test_path  = 'data/merged_json/test/test.json'
+train_path = '../data/merged_json/train/train.json'
+test_path  = '../data/merged_json/test/test.json'
 
-# Initialize HIRR baseline handler
 hirr_base = HIRRBase(train_path)
 
 with open(test_path, 'r', encoding='utf-8') as f:
@@ -33,7 +32,6 @@ for item in test_data:
         target = seq[-1]
         context = seq[:-1]
 
-        # FIX 3: Use standard Python Boolean 'False' instead of 'sympy.false'
         action = UserAction(activity=activity, objects_in_activity=context, completed=False)
         top_pred = hirr_base.evaluate_next_step(action)
 
@@ -41,9 +39,7 @@ for item in test_data:
         y_pred_hybrid_llm.append(top_pred)
         total_evaluations += 1
 
-# ---------------------------------------------------------
-# COMPUTE F1 SCORES
-# ---------------------------------------------------------
+# F1 SCORES
 hybrid_f1_macro = f1_score(y_true, y_pred_hybrid_llm, average='macro', zero_division=0)
 hybrid_f1_weighted = f1_score(y_true, y_pred_hybrid_llm, average='weighted', zero_division=0)
 
